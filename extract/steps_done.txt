@@ -1,0 +1,17 @@
+- Installed Kafka
+https://kafka.apache.org/downloads (scala 2.12)
+
+- Run Zookeeper with cmd `bin/zookeeper-server-start.sh config/zookeeper.properties`
+
+- Run Kafka with cmd `bin/kafka-server-start.sh config/server.properties`
+
+- Create topics
+bin/kafka-topics.sh --create --topic loan_data_csv --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+bin/kafka-topics.sh --create --topic loan_data_parquet --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+bin/kafka-topics.sh --create --topic loan_data_json --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+
+- Run Kafka Producer
+python kafka_producer.py
+
+- Run Kafka Consumer
+python kafka_consumer.py

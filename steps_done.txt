@@ -15,3 +15,23 @@ python kafka_producer.py
 
 - Run Kafka Consumer
 python kafka_consumer.py
+
+
+- Integrate Airflow 
+pip instal apache-airflow
+
+- Run Airflow
+airflow webserver -p 8080
+airflow scheduler
+
+- Create DAG
+airflow dags create loan_data_dag
+
+- Run DAG
+airflow dags trigger loan_data_dag
+
+- Check the result
+airflow webserver -p 8080
+
+- Check the result in Kafka
+bin/kafka-console-consumer.sh --topic loan_data_json --from-beginning --bootstrap-server localhost:9092

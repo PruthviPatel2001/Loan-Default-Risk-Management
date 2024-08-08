@@ -1,0 +1,119 @@
+version: "3"
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_ADVERTISED_LISTENERS=INSIDE://kafka:9093,OUTSIDE://localhost:9092
+      - KAFKA_LISTENER_NAME_PREFIX=INSIDE_
+      - KAFKA_LISTENERS=INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      - KAFKA_LISTENER_SECURITY_PROTOCOL=PLAINTEXT
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INSIDE
+    depends_on:
+      - zookeeper
+
+  kafka-init:
+    image: wurstmeister/kafka:latest
+    container_name: kafka-init
+    depends_on:
+      - kafka
+    entrypoint: ["sh", "/create_topics.sh"]
+    # volumes:
+    #   - ./script/create_topics.sh:/create_topics.sh
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  airflow-init:
+    image: apache/airflow:2.9.3-python3.11
+    container_name: airflow-init
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./extract:/opt/airflow/extract
+      - ./load:/opt/airflow/load
+      - ./transform:/opt/airflow/transform
+      - ./script/entrypoint.sh:/opt/airflow/entrypoint.sh
+      - ./utils:/opt/airflow/utils
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "pip install -r /opt/airflow/requirements.txt && airflow db init",
+      ]
+
+  airflow-webserver:
+    image: apache/airflow:2.9.3-python3.11
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+      - airflow-init
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./extract:/opt/airflow/extract
+      - ./load:/opt/airflow/load
+      - ./transform:/opt/airflow/transform
+      - ./script/entrypoint.sh:/opt/airflow/entrypoint.sh
+      - ./utils:/opt/airflow/utils
+    ports:
+      - "8080:8080"
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "pip install -r /opt/airflow/requirements.txt && airflow webserver",
+      ]
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.3-python3.11
+    container_name: airflow-scheduler
+    depends_on:
+      - postgres
+      - airflow-webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "pip install -r /opt/airflow/requirements.txt && airflow db upgrade && airflow scheduler",
+      ]
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./extract:/opt/airflow/extract
+      - ./load:/opt/airflow/load
+      - ./transform:/opt/airflow/transform
+      - ./script/entrypoint.sh:/opt/airflow/entrypoint.sh
+      - ./utils:/opt/airflow/utils
+
+volumes:
+  postgres_data:

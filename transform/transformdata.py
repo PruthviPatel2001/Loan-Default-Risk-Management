@@ -7,6 +7,8 @@ from transform.utils.new_features import  feature_creation_pipeline
 from transform.utils.drop_null import drop_null
 from transform.utils.features_filtering import features_filtering
 
+from utils.load_to_csv import load_to_csv
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -37,6 +39,9 @@ def transform_data(df):
 
         df = bin_features(df)
         logger.info('Binned features')
+
+        df = load_to_csv('Processdata', 'transformed_data.csv', df)
+        logger.info('Transformed Data loaded to CSV')
 
       
         return df

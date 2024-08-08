@@ -6,8 +6,6 @@ import os
 import sys
 import time
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)  # Set to INFO to include only relevant logs
 logger = logging.getLogger(__name__)

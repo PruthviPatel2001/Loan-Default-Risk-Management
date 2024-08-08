@@ -10,10 +10,10 @@ sys.path.append(os.path.join(base_path, 'load'))
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
-from extract.kafkaproducer import produce_messages
-from extract.kafkaconsumer import consume_messages
-from transform.transformdata import transform_data
-from load.load_data import load_to_db
+from kafkaproducer import produce_messages
+from kafkaconsumer import consume_messages
+from transformdata import transform_data
+from load.loaddata import load_to_db
 import pandas as pd
 import logging
 

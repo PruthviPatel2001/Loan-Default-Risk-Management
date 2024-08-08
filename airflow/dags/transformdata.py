@@ -1,11 +1,11 @@
 import pandas as pd
 import logging
-from transform.utils.binning import bin_features
-from transform.utils.outliers_handling import outliers_handling
-from transform.utils.handel_duplicates import handel_duplicate
-from transform.utils.new_features import  feature_creation_pipeline
-from transform.utils.drop_null import drop_null
-from transform.utils.features_filtering import features_filtering
+from utilstrsn.binning import bin_features
+from utilstrsn.outliers_handling import outliers_handling
+from utilstrsn.handel_duplicates import handel_duplicate
+from utilstrsn.new_features import  feature_creation_pipeline
+from utilstrsn.drop_null import drop_null
+from utilstrsn.features_filtering import features_filtering
 
 from utils.load_to_csv import load_to_csv
 

@@ -3,9 +3,9 @@ import os
 import sys
 
 # Add the directory containing the 'utils' folder to the path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'utils')))
 
-from utils.db import load_dataframe_to_table
+from load.utils.db import load_dataframe_to_table
 from utils.load_to_csv import load_to_csv
 import logging
 

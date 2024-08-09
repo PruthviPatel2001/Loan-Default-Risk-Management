@@ -40,7 +40,7 @@ def transform_data(df):
         df = bin_features(df)
         logger.info('Binned features')
 
-        df = load_to_csv('Processdata', 'transformed_data.csv', df)
+        load_to_csv('Processdata', 'transformed_data.csv', df)
         logger.info('Transformed Data loaded to CSV')
 
       

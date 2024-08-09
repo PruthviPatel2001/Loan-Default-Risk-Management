@@ -3,51 +3,56 @@ import json
 import pandas as pd
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)  # Set to INFO to include only relevant logs
+logging.basicConfig(level=logging.INFO)  
 logger = logging.getLogger(__name__)
 
-# Adjust Kafka logging level
-logging.getLogger('kafka').setLevel(logging.WARNING)  # Reduce Kafka logs to WARNING level
+logging.getLogger('kafka').setLevel(logging.WARNING)  
 
-# Set this variable to True to enable test mode
-test_mode = True
+Test_mode = True
 
-def produce_messages(file_path, topic, file_type):
-    logging.info(f'**** Starting to produce messages from {file_type} file to topic {topic} ****')
+def produce_messages():
+    logging.info('**** Starting to produce messages ****')
+
+    # Define file paths, topics, and file types
+    csv_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.csv'
+    parquet_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.parquet'
+    json_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.json'
     
+    file_paths = [csv_file_path]
+    topics = ['loan_data_csv']
+    file_types = ['csv']
+
+    if not Test_mode:
+        file_paths.extend([parquet_file_path, json_file_path])
+        topics.extend(['loan_data_parquet', 'loan_data_json'])
+        file_types.extend(['parquet', 'json'])
+
     producer = KafkaProducer(
         bootstrap_servers='localhost:9092',
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
 
     try:
-        if file_type == 'csv':
-            df = pd.read_csv(file_path)
-        elif file_type == 'parquet':
-            df = pd.read_parquet(file_path)
-        elif file_type == 'json':
-            df = pd.read_json(file_path)
-        else:
-            raise ValueError('Unsupported file type')
+        for file_path, topic, file_type in zip(file_paths, topics, file_types):
+            logging.info(f'Processing {file_type} file: {file_path} to topic: {topic}')
+            
+            if file_type == 'csv':
+                df = pd.read_csv(file_path)
+            elif file_type == 'parquet':
+                df = pd.read_parquet(file_path)
+            elif file_type == 'json':
+                df = pd.read_json(file_path)
+            else:
+                raise ValueError('Unsupported file type')
 
-        for record in df.to_dict(orient='records'):
-            producer.send(topic, record)
-        
-        producer.flush()
-        logging.info(f'Successfully sent messages to topic {topic}')
+            for record in df.to_dict(orient='records'):
+                producer.send(topic, record)
+            
+            producer.flush()
+            logging.info(f'Successfully sent messages to topic {topic}')
     
     except Exception as e:
         logging.error(f'Error occurred: {e}')
     finally:
         producer.close()
 
-if __name__ == '__main__':
-    if test_mode:
-        # Only load CSV file in test mode
-        produce_messages('/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.csv', 'loan_data_csv', 'csv')
-    else:
-        # Load CSV, Parquet, and JSON files in non-test mode
-        produce_messages('/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.csv', 'loan_data_csv', 'csv')
-        produce_messages('/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.parquet', 'loan_data_parquet', 'parquet')
-        produce_messages('/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.json', 'loan_data_json', 'json')

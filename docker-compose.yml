@@ -27,9 +27,9 @@ services:
     container_name: kafka-init
     depends_on:
       - kafka
-    entrypoint: ["sh", "/create_topics.sh"]
-    # volumes:
-    #   - ./script/create_topics.sh:/create_topics.sh
+    entrypoint: ["sh", "-c", "sleep 40 && sh /create_topics.sh"]
+    volumes:
+      - ./script/create_topics.sh:/create_topics.sh
 
   postgres:
     image: postgres:13
@@ -51,6 +51,7 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./Data:/opt/airflow/Data
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./extract:/opt/airflow/extract
       - ./load:/opt/airflow/load
@@ -76,6 +77,7 @@ services:
       - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./Data:/opt/airflow/Data
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./extract:/opt/airflow/extract
       - ./load:/opt/airflow/load
@@ -108,6 +110,7 @@ services:
       ]
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./Data:/opt/airflow/Data
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./extract:/opt/airflow/extract
       - ./load:/opt/airflow/load

@@ -2,7 +2,7 @@ import sys
 import os
 
 # Add the path to the project root directory
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 from airflow import DAG
@@ -31,13 +31,13 @@ for handler in logger.handlers:
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 8, 4),  # Adjust to your start date
+    'start_date': datetime(2024, 8, 8),  # Adjust to your start date
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
 # Define the DAG
-with DAG('loan_default_etl_pipeline',
+with DAG('loan_default_pipeline',
     default_args=default_args,
     description='ETL pipeline for loan default prediction',
     schedule_interval='@daily') as dag:
@@ -67,7 +67,7 @@ with DAG('loan_default_etl_pipeline',
     def load_data_task():
         try:
             logging.info('Starting data load to database')
-            df = pd.read_csv('/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/Processdata/transformed_data.csv')
+            df = pd.read_csv('/opt/airflow/Data/Processdata/transformed_data.csv')
             load_to_db(df)
             logging.info('Data load to database completed successfully')
         except Exception as e:

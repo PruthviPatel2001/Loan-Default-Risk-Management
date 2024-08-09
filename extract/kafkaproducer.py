@@ -3,10 +3,10 @@ import json
 import pandas as pd
 import logging
 
-logging.basicConfig(level=logging.INFO)  
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-logging.getLogger('kafka').setLevel(logging.WARNING)  
+logging.getLogger('kafka').setLevel(logging.WARNING)
 
 Test_mode = True
 
@@ -14,9 +14,9 @@ def produce_messages():
     logging.info('**** Starting to produce messages ****')
 
     # Define file paths, topics, and file types
-    csv_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.csv'
-    parquet_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.parquet'
-    json_file_path = '/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/application_data_1.json'
+    csv_file_path = '/opt/airflow/Data/application_data_1.csv'
+    parquet_file_path = '/opt/airflow/Data/application_data_1.parquet'
+    json_file_path = '/opt/airflow/Data/application_data_1.json'
     
     file_paths = [csv_file_path]
     topics = ['loan_data_csv']
@@ -28,7 +28,7 @@ def produce_messages():
         file_types.extend(['parquet', 'json'])
 
     producer = KafkaProducer(
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers='kafka:9092',  # Use the Kafka container name
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
 
@@ -55,4 +55,3 @@ def produce_messages():
         logging.error(f'Error occurred: {e}')
     finally:
         producer.close()
-

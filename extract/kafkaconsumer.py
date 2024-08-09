@@ -58,7 +58,7 @@ def consume_messages(batch_size=10000, consume_duration=60):
             if data:
                 logger.info(f"Processing a batch of {len(data)} messages.")
                 df = pd.DataFrame(data)
-                df.to_csv(f'/path/to/consumed_data_{topic}.csv', index=False)
+                # df.to_csv(f'/path/to/consumed_data_{topic}.csv', index=False)
                 return df
 
             if not test_mode:

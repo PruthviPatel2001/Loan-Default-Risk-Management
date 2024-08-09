@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 def load_to_csv(dir,filename,df):
-    output_dir = "/Users/pruthvipatel/Documents/projects/Loan Defaulter ETL/Data/"+dir
+    output_dir = "/opt/airflow/Data/"+dir
 
         # Define the file path
     file_path = os.path.join(output_dir, filename)

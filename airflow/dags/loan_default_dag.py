@@ -1,11 +1,9 @@
 import sys
 import os
 
-# Add the root directory to sys.path
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-sys.path.append(os.path.join(base_path, 'extract'))
-sys.path.append(os.path.join(base_path, 'transform'))
-sys.path.append(os.path.join(base_path, 'load'))
+# Add the path to the project root directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator

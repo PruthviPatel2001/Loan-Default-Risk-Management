@@ -1,35 +1,121 @@
 version: "3"
 services:
   zookeeper:
-    image: wurstmeister/zookeeper:latest
+    image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
     ports:
       - "2181:2181"
+    networks:
+      - confluent
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   kafka:
-    image: wurstmeister/kafka:latest
+    image: confluentinc/cp-server:7.4.0
     container_name: kafka
     ports:
       - "9092:9092"
+      - "9093:9093"
     environment:
-      - KAFKA_ADVERTISED_LISTENERS=INSIDE://kafka:9093,OUTSIDE://localhost:9092
-      - KAFKA_LISTENER_NAME_PREFIX=INSIDE_
-      - KAFKA_LISTENERS=INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
-      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      - KAFKA_LISTENER_SECURITY_PROTOCOL=PLAINTEXT
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_INTER_BROKER_LISTENER_NAME=INSIDE
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,INSIDE://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INSIDE:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INSIDE://0.0.0.0:9093
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:9092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: "false"
+      CONFLUENT_SUPPORT_CUSTOMER_ID: "anonymous"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - confluent
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: schema-registry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - confluent
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.4.0
+    container_name: control-center
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      # CONTROL_CENTER_CONNECT_CLUSTER: http://connect:8083
+      # CONTROL_CENTER_KSQL_KSQLDB1_URL: http://ksqldb-server:8088
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONFLIENT_METRICS_ENABLE: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    networks:
+      - confluent
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9021"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   kafka-init:
     image: wurstmeister/kafka:latest
     container_name: kafka-init
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     entrypoint: ["sh", "-c", "sleep 40 && sh /create_topics.sh"]
     volumes:
       - ./script/create_topics.sh:/create_topics.sh
+    networks:
+      - confluent
 
   postgres:
     image: postgres:13
@@ -40,6 +126,8 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - confluent
 
   airflow-init:
     image: apache/airflow:2.9.3-python3.11
@@ -49,6 +137,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__SECRET_KEY=aabbccddeeff
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./Data:/opt/airflow/Data
@@ -58,12 +147,9 @@ services:
       - ./transform:/opt/airflow/transform
       - ./script/entrypoint.sh:/opt/airflow/entrypoint.sh
       - ./utils:/opt/airflow/utils
-    entrypoint:
-      [
-        "sh",
-        "-c",
-        "pip install -r /opt/airflow/requirements.txt && airflow db init",
-      ]
+    entrypoint: ["sh", "/opt/airflow/entrypoint.sh"]
+    networks:
+      - confluent
 
   airflow-webserver:
     image: apache/airflow:2.9.3-python3.11
@@ -74,7 +160,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
+      - AIRFLOW__CORE__SECRET_KEY=aabbccddeeff
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./Data:/opt/airflow/Data
@@ -92,6 +178,8 @@ services:
         "-c",
         "pip install -r /opt/airflow/requirements.txt && airflow webserver",
       ]
+    networks:
+      - confluent
 
   airflow-scheduler:
     image: apache/airflow:2.9.3-python3.11
@@ -102,6 +190,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__SECRET_KEY=aabbccddeeff
     entrypoint:
       [
         "sh",
@@ -117,6 +206,28 @@ services:
       - ./transform:/opt/airflow/transform
       - ./script/entrypoint.sh:/opt/airflow/entrypoint.sh
       - ./utils:/opt/airflow/utils
+    networks:
+      - confluent
+
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: pruthvi
+  #     MYSQL_DATABASE: loan_management_new
+  #     MYSQL_USER: admin
+  #     MYSQL_PASSWORD: admin
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - confluent
 
 volumes:
   postgres_data:
+  # mysql_data:
+
+networks:
+  confluent:
+    driver: bridge

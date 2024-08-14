@@ -35,3 +35,13 @@ airflow webserver -p 8080
 
 - Check the result in Kafka
 bin/kafka-console-consumer.sh --topic loan_data_json --from-beginning --bootstrap-server localhost:9092
+
+
+Run from docker 
+
+- docker ps 
+- copy airflow container id for webserver
+- docker exec -it <container_id> /bin/bash
+- airflow tasks test loan_default_pipeline_v3 produce_data 2024-08-12
+- airflow tasks test loan_default_pipeline_v3 consume_and_transform_data 2024-08-12
+- airflow dags trigger loan_default_pipeline_final (to trigger the entire dag)

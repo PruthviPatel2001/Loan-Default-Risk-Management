@@ -14,7 +14,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Test mode flag
-test_mode = True
+test_mode = False
 
 def load_to_db(df):
     logging.info('Starting data loading')

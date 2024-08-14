@@ -44,7 +44,7 @@ def transform_data(df):
         logger.info('Transformed Data loaded to CSV')
 
       
-        return df
+        # return df
     
     except Exception as e:
         logging.error(f'Error occurred during transformation: {e}')

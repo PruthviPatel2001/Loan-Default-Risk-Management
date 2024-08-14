@@ -31,13 +31,13 @@ for handler in logger.handlers:
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 8, 8),  # Adjust to your start date
+    'start_date': datetime(2024, 8, 11),  # Adjust to your start date
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
 # Define the DAG
-with DAG('loan_default_pipeline',
+with DAG('loan_default_pipeline_v3',
     default_args=default_args,
     description='ETL pipeline for loan default prediction',
     schedule_interval='@daily') as dag:
@@ -54,16 +54,14 @@ with DAG('loan_default_pipeline',
     def consume_and_transform_data_task():
         try:
             logging.info('Starting Kafka Consumer')
-            df = consume_messages()
+            consume_messages()  # This will consume and transform data in batches
             logging.info('Kafka Consumer completed successfully')
 
-            logging.info('Starting data transformation')
-            transform_data(df)
-            logging.info('Data transformation completed successfully')
         except Exception as e:
-            logging.info(f'Error in consume and transform task: {e}')
-            raise
+            logging.error(f'Error in consume and transform task: {e}')
+        raise
 
+        
     def load_data_task():
         try:
             logging.info('Starting data load to database')

@@ -27,7 +27,8 @@ def consume_messages():
     consumer = KafkaConsumer(
         bootstrap_servers=bootstrap_servers,
         group_id=group_id,
-        auto_offset_reset='earliest'
+        auto_offset_reset='earliest',
+        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
     )
     
     # Subscribe to topics

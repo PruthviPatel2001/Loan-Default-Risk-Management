@@ -62,7 +62,7 @@ def produce_messages():
                 df = pd.read_parquet(file_path)
             elif file_type == 'json':
                 try:
-                    df = pd.read_json(file_path, lines=True)  # Assuming JSON is in newline-delimited format
+                    df = pd.read_json(file_path)  # Assuming JSON is in newline-delimited format
                 except ValueError as ve:
                     logging.error(f'ValueError: {ve} while processing JSON file: {file_path}')
                     continue

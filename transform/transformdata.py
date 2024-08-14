@@ -16,11 +16,21 @@ logger = logging.getLogger(__name__)
 def transform_data(df):
     logger.info('Starting data transformation')
 
+    # view first 5 rows of the dataframe
+    # logger.info(f'DataFrame shape: {df.shape}')
+    logger.info(f'First 5 rows of the DataFrame: {df.head(2)}')
+
     try:
+       
+       
+        # check data type if not dataframe convert to dataframe
+        if not isinstance(df, pd.DataFrame):
+            df = pd.DataFrame(df)
+            logger.info('Data converted to DataFrame')
 
         logger.info(f'Initial DataFrame shape: {df.shape}')
         logger.info('Total features in the dataset: {}'.format(df.shape[1]))
-        
+        logger.info('cehck instance of the dataframe: {}'.format(isinstance(df, pd.DataFrame)))
         df = features_filtering(df)
         logger.info('Filtered features Total features in the dataset: {}'.format(df.shape[1]))
 

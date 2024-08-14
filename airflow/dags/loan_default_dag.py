@@ -59,7 +59,7 @@ with DAG('loan_default_pipeline_v3',
 
         except Exception as e:
             logging.error(f'Error in consume and transform task: {e}')
-        raise
+        # raise
 
         
     def load_data_task():

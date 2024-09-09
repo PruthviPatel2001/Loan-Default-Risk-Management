@@ -16,7 +16,7 @@ This project is designed to perform ETL (Extract, Transform, Load) operations fo
 
 - Workflow Orchestration: Utilize Apache Airflow for scheduling and orchestrating ETL tasks. The project includes an Airflow DAG (loan_default_dag.py) that automates the execution of the ETL pipeline, allowing for efficient and reliable data processing.
 
-## TGetting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -42,6 +42,8 @@ docker-compose up -d
 ## Testing Mode
 To test with a limited dataset, set the test_mode variable to True in kafkaconsumer.py
 
+## Current Working Branch
+This repository's current working branch is test2. Make sure to switch to this branch for the latest updates and changes.
 
 ## Contributing
 
